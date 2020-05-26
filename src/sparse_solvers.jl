@@ -1,6 +1,8 @@
 using SparseArrays, LinearAlgebra
 
 function sparse_recursive_elimination_tree(L::SparseMatrixCSC,b::SparseVector)
+	#Recursive elimination tree algorithm for lower triangular systems
+	#/!\ Stack overflow /!\
 	χ = []
 	w = fill!(Vector{Integer}(undef,L.n),0)
 	for i in 1:length(b.nzind)
@@ -22,6 +24,7 @@ function sparse_dsfr(j::Integer,L::SparseMatrixCSC,b::SparseVector,w::Vector{Int
 end
 
 function sparse_elimination_tree_ut(U::SparseMatrixCSC,b::SparseVector)
+	#Direct elimination tree algorithm for upper triangular systems
 	w = zeros(Float64,length(U.nzval))
 	χ = []
 	queue = []
@@ -52,6 +55,7 @@ end
 
 
 function sparse_elimination_tree_lt(L::SparseMatrixCSC,b::SparseVector)
+	#Direct elimination tree algorithm for lower triangular systems
 	w = zeros(Float64,length(L.nzval))
 	χ = []
 	queue = []
@@ -81,32 +85,33 @@ function sparse_elimination_tree_lt(L::SparseMatrixCSC,b::SparseVector)
 end
 
 function sparse_solve_matrix_ut(U::SparseMatrixCSC,A::SparseMatrixCSC)
-	for k in 1:U.n
+	@inbounds for k in 1:U.n
 		χ = sparse_elimination_tree_ut(U,A[:,k])
-		for i in 1:length(χ)
+		@inbounds for i in 1:length(χ)
 			A[χ[i],k] = A[χ[i],k] / U.nzval[U.colptr[χ[i]+1]-1]
-			for p in U.colptr[χ[i]+1]-2:-1:U.colptr[χ[i]]
+			@inbounds for p::Int64 in U.colptr[χ[i]+1]-2:-1:U.colptr[χ[i]]
 				A[U.rowval[p],k] -= U.nzval[p]*A[χ[i],k]
 			end
 		end
 		dropzeros!(A[:,k])
 	end
-	droptol!(A,0.0001) #Remove close to 0 entries to free memory, seems durty => Need to be improved
+	droptol!(A,1.0e-20) #Remove close to 0 entries to free memory, seems durty => Need to be improved
 	#This dirty method seems to reduce M = U⁻¹L⁻¹A computation time
+	#Isn't it the same approach than in ILUT?
 end
 
 function sparse_solve_matrix_lt(L::SparseMatrixCSC,A::SparseMatrixCSC)
-	for k in 1:L.n
+	@inbounds for k in 1:L.n
 		χ = sparse_elimination_tree_lt(L,A[:,k])
-		for i in 1:length(χ)
+		@inbounds for i in 1:length(χ)
 			A[χ[i],k] = A[χ[i],k] / L.nzval[L.colptr[χ[i]]]
-			for p in L.colptr[χ[i]]+1:L.colptr[χ[i]+1]-1
+			@inbounds for p in L.colptr[χ[i]]+1:L.colptr[χ[i]+1]-1
 				A[L.rowval[p],k] -= L.nzval[p]*A[χ[i],k]
 			end
 		end
 		dropzeros!(A[:,k])
 	end
-	droptol!(A,0.01) #Remove close to 0 entries to free memory, seems durty => Need to be improved
+	droptol!(A,1.0e-20) #Same observation than above
 end
 
 function sparse_solve_vector_ut(U::SparseMatrixCSC,b::SparseVector)

@@ -12,9 +12,11 @@ function plu_restarted_gmres(A::SparseMatrixCSC{Float64,Int64},b::SparseVector{F
 
 #	println(A)
 	
-	@time sparse_solve_matrix_ut(U,A) #Bottleneck 
+	@time sparse_solve_matrix_ut(U,A) #Bottleneck => an idea is to drop elements which are smaller than a given threshold
 
 #	println(A)
+
+        println("Κ(M) = ",cond(Array(A),2))
 
 	sparse_solve_vector_lt(L,b)
 
@@ -28,7 +30,7 @@ function restarted_gmres(A::SparseMatrixCSC{Float64},b::SparseVector{Float64},m:
 	nrow,ncol = size(A)
 	nrow == ncol || error("A is not square.")
 	n = nrow
-	error = 0.0005
+	error = 0.001
 	optimum = false
 
 	Hm = Matrix{Float64}(undef,m,m-1)
@@ -95,7 +97,7 @@ function restarted_gmres(A::SparseMatrixCSC{Float64},b::SparseVector{Float64},m:
 			iter+=1
 		end
 	end
-	return x0,iter
+	return x0,iter,norm(b-A*x0,2)
 
 end
 
@@ -143,10 +145,10 @@ function sparse_gmres(A_cs::SparseMatrixCSC,b_cs::SparseVector,n::Integer)
 	return x0 + Vm[:,1:m-1]*ρm
 end
 
-A,b,n = system_from_mtx_file("../data/orsirr_1.mtx")
+A,b,n = system_from_mtx_file("/home/crichefo/Downloads/orsirr_1.mtx")
+println("Κ(A) = ",cond(A,2))
 
-#=
-A = [1.0 0.0 2.0 0.0 0.0 0.0;
+#=A = [1.0 0.0 2.0 0.0 0.0 0.0;
      0.0 2.0 3.0 0.0 0.0 5.0;
      0.0 0.0 3.0 0.0 0.0 1.0;
      1.0 2.0 0.0 1.0 0.0 3.0;
@@ -155,8 +157,8 @@ A = [1.0 0.0 2.0 0.0 0.0 0.0;
 
 b = [1.0;2.0;3.0;0.0;0.0;-1.0]
 
-n = 6
-=#
+n = 6=#
+
 
 println("========== Direct Method ==========")
 @time x=A\b
@@ -165,21 +167,28 @@ println("2 last values of x : ",x[n-1:n],"\n")
 A_cs = SparseMatrixCSC(A)
 b_cs = SparseVector(b)
 
-lu_cs = cs_ilu(SparseMatrixCSC(transpose(A))) #Store both L and U in a single SparseMatrixCSC
-L,U = cs_scatter_lu(lu_cs) #Return dense matrices at the moment, need to improve sparse matrices directly
-
-L_cs = SparseMatrixCSC(L) #Will be removed once cs_scatter_lu or ILU(p) will return Sparse L and U separately
-U_cs = SparseMatrixCSC(U)
-
 #Sparse A and b, 10 = Number of Krylov Subspaces Elements Computed
 println("=========== RESTARTED GMRES ===========")
-x,iter = @time restarted_gmres(A_cs,b_cs,10)
-println("RESTARTED GMRES | Number of iteration : ",iter,"\n")
+
+x,iter,β = @time restarted_gmres(A_cs,b_cs,10)
+
+println("RESTARTED GMRES | Number of iteration : ",iter,"| β : ",β,"\n")
 println("2 last values of x : ",x[n-1:n],"\n")
+
+println("======> Preconditioning step : ")
+lu_cs = @time sparse_ilut(A_cs,1.0e-5,5) #Incomplete LU factorization with threshold strategy ie. ILUT
+
+#lu_cs = sparse_ilu(A_cs) #Incomplete LU factorization with 0 fill-in ie. ILU(0)
+#p = 1
+#lu_cs = sparse_ilu(A_cs,p) #Incommplete LU factorization with p fill-in ie. ILU(p)
+
+L_cs,U_cs = sparse_scatter_lu_sparse(lu_cs) #Return sparse lower and upper matrices from a given matrix, here the lu_matrix
 
 #Sparse A, Sparse b, 10 = Number of Krylov Subspaces Elements Computed, Sparse L and U
 println("=========== Preconditioned RESTARTED GMRES ===========")
-x,iter = @time plu_restarted_gmres(A_cs,b_cs,10,L_cs,U_cs) #This function erase A and b, to be fixed ?
-println("Preconditioned RESTARTED GMRES | Number of iteration : ",iter,"\n")
+
+x,iter,β = plu_restarted_gmres(A_cs,b_cs,10,L_cs,U_cs) #This function erase A and b, to be fixed ?
+
+println("Preconditioned RESTARTED GMRES | Number of iteration : ",iter,"| β : ",β,"\n")
 println("2 last values of x : ",x[n-1:n],"\n")
 
