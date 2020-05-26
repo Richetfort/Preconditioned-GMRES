@@ -21,10 +21,17 @@ By default, the code is ran on an Harwel-Boeing matrix <i>orsirr_1.mtx</i>.
 
 I discussed with the Professor <i>Serge G. Petiton</i> and he adviced me to use the <a href=https://smg2s.github.io/>Parallel Generator of Non-Hermitian Matrices Computed from Given Spectra</a> he developed himself with <i><a href=https://github.com/brunowu>Xinzhe Wu<a></i>. This can be a very useful tool for benchmarking GMRES and Preconditioners given a set of eigenvalues, and will be called soon. 
 
+## Output 
+<p align='center'>
+<img src="images/example.png"/>
+</p>
+
 Output returns performances of :
 * Direct solver method x = A\b
 * Restarted GMRES without preconditioning
 * Restarted GMRES with ILU(t,p) preconditioning (but other preconditioners can be chosen)
+
+<i>We can see here that accuracy has been degraded in the Preconditined GMRES because of the threshold chosen. Smaller will be the threshold and bigger will be the integer p, more accurate should be the final solution but slower in computation time and heavier in memory.</i>
 
 ## In coming ...
 
