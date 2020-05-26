@@ -1,7 +1,6 @@
 using SparseArrays, LinearAlgebra
 
 include("utilities.jl")
-include("matrix_lu.jl")
 
 function lower_and_upper_nentries(A_cs::SparseMatrixCSC{Float64,Int64},index::Integer)
 
