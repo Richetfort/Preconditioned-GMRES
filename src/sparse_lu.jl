@@ -1,6 +1,6 @@
 using SparseArrays, LinearAlgebra
 
-include("utilities.jl")
+include("sparse_solvers.jl")
 
 function lower_and_upper_nentries(A_cs::SparseMatrixCSC{Float64,Int64},index::Integer)
 
@@ -265,42 +265,18 @@ function sparse_scatter_lu_dense(lu_cs::SparseMatrixCSC{Float64,Int64})
 	return LowerTriangular(L), UpperTriangular(U)
 end
 
-#=
-n = 6
+function sparse_lu_left_preconditioning(A::SparseMatrixCSC{Float64,Int64},b::SparseVector{Float64},L::SparseMatrixCSC{Float64,Int64},U::SparseMatrixCSC{Float64,Int64})
+	
+	M::SparseMatrixCSC{Float64,Int64} = sparse(A)
+	v::SparseVector{Float64} = sparse(b)
 
-A = [1.0 1.0 0.0 0.0 3.0 5.0;
-     1.0 2.0 0.0 0.0 1.0 0.0;
-     1.0 0.0 -1.0 4.0 3.0 4.0;
-     0.0 2.0 0.0 3.0 -1.0 0.0;
-     0.0 0.0 0.0 3.0 4.0 0.0;
-     1.0 2.0 0.0 0.0 0.0 3.6]
+	@time sparse_solve_matrix_lt(L,M)
 
-A_cs = SparseMatrixCSC(A)
+	@time sparse_solve_matrix_ut(U,M) #Bottleneck
 
-L,U = lu_crout(A,n)
+	sparse_solve_vector_lt(L,v)
 
-#println(LU_cs)
+	sparse_solve_vector_ut(U,v)
 
-#A₁,lev₁ = cs_augmented_pattern(A_cs,1)
-println("===== lu_cs₁ =====")
-lu_cs = sparse_ilut(A_cs,1.0e-3,2)
-l_cs,u_cs = sparse_scatter_lu_sparse(lu_cs)
-println("L₁=====")
-println(l_cs)
-println("U₁=====")
-println(u_cs)
-println("L₁×U₁ =====")
-println(Array(l_cs*u_cs))
-
-
-println("===== L (crout)  =====")
-println(L)
-
-println("===== U (crout)  =====")
-println(U)
-
-println("===== A_cs =====")
-println(Array(A_cs))
-
-#println(A)=#
-
+	return M,v
+end

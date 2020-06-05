@@ -122,7 +122,7 @@ function sparse_solve_vector_ut(U::SparseMatrixCSC,b::SparseVector)
 			b[U.rowval[p]] -= U.nzval[p]*b[χ[i]]
 		end
 	end
-	droptol!(b,0.0000001)
+	#droptol!(b,0.0000001)
 end
 
 function sparse_solve_vector_lt(L::SparseMatrixCSC,b::SparseVector)
@@ -133,45 +133,5 @@ function sparse_solve_vector_lt(L::SparseMatrixCSC,b::SparseVector)
 			b[L.rowval[p]] -= L.nzval[p]*b[χ[i]]
 		end
 	end
-	droptol!(b,0.0000001)
+	#droptol!(b,0.0000001)
 end
-#=
-U = [1.0 0.0 1.0 3.0 0.0 1.0;
-     0.0 2.0 0.0 4.0 0.0 2.0;
-     0.0 0.0 1.0 0.0 3.0 0.0;
-     0.0 0.0 0.0 2.0 0.0 0.0;
-     0.0 0.0 0.0 0.0 1.0 3.0;
-     0.0 0.0 0.0 0.0 0.0 4.0]
-
-A = [1.0 0.0 0.0 2.0 0.0 0.0;
-     4.0 6.0 3.0 0.0 0.0 1.0;
-     0.0 0.0 2.0 0.0 0.0 0.0;
-     5.0 2.0 0.0 2.0 0.0 3.0;
-     1.0 2.0 0.0 0.0 4.0 0.0;
-     1.2 0.3 0.0 0.0 0.0 6.0]
-
-b = [0.0;1.0;0.0;0.0;0.0;0.0]
-
-L = transpose(U)
-
-A_cs = SparseMatrixCSC(A)
-
-U_cs = SparseMatrixCSC(U)
-
-L_cs = SparseMatrixCSC(L)
-
-b_cs = SparseVector(b)
-
-#@time χ = sparse_elimination_tree_lt(U_cs,b_cs)
-
-#println(χ)
-
-@time sparse_solve_matrix_ut(U_cs,A_cs)
-
-println(A_cs)=#
-#=
-println(Array(A_cs))
-
-@time x = inv(L)*A
-
-println(x)=#
