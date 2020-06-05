@@ -1,4 +1,4 @@
-using SparseArrays, LinearAlgebra, MatrixMarket,
+using SparseArrays, LinearAlgebra, MatrixMarket
 
 function diagIndex(A::SparseMatrixCSC{Float64,Int64},row::Integer)
 	diag::Integer = A.colptr[row]
