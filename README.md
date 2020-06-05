@@ -11,10 +11,13 @@ Feel free to use and comment on my work! :-)
 * Julia
 * SparseArrays.jl
 * LinearAlgebra.jl
+* MatrixMarket.jl
 
 ## Running the code
 
 ```shell
+git clone https://github.com/Protoniac/Preconditioned-GMRES
+cd Preconditioned-GMRES/src/
 julia main.jl
 ```
 By default, the code is ran on an Harwel-Boeing matrix <i>orsirr_1.mtx</i>.
